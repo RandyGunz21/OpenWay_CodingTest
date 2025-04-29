@@ -5,6 +5,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
@@ -19,7 +20,7 @@ public class TestCase {
     private WebDriverWait wait;
 
     // Replace with your actual test account credentials
-    private static final String LOGIN_EMAIL = "randygunawan212004@example.com";
+    private static final String LOGIN_EMAIL = "randygunawan212004@gmail.com";
     private static final String LOGIN_PASSWORD = "P@ssw0rd";
 
     @BeforeMethod
@@ -33,7 +34,7 @@ public class TestCase {
     }
 
     @Test
-    public void addProductToCartTest() {
+    public void addProductToCartTest() throws InterruptedException {
         // Step 1: Navigate to Periplus website
         driver.get("https://www.periplus.com/");
 
@@ -53,48 +54,51 @@ public class TestCase {
 
         // Step 4: Submit login form
         WebElement signInButton = driver.findElement(
-                By.xpath("//button[contains(text(), 'Sign In') or contains(@class, 'login')]"));
+                By.id("button-login"));
         signInButton.click();
 
         // Wait for successful login - verify username is displayed or login was successful
         wait.until(ExpectedConditions.or(
-                ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'account') or contains(@class, 'user')]")),
+                ExpectedConditions.visibilityOfElementLocated(By.xpath("//td[contains(text(), 'randy')]")),
                 ExpectedConditions.urlContains("account")
         ));
 
         // Step 5: Search for a product (books are common on Periplus)
         WebElement searchBox = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//input[@type='search' or @id='search' or @name='q']")));
+                By.xpath("//input[@type='search' or @id='filter_name' or @name='filter_name']")));
         searchBox.sendKeys("Harry Potter");
         searchBox.submit();
 
         // Step 6: Wait for search results and click on the first product
         WebElement firstProduct = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[contains(@class, 'product') or contains(@class, 'item')]//a[1]")));
+                By.xpath("//div[@style='padding:0px 5px'][1]//a[contains(text(), 'Harry Potter')]")));
 
         // Store product name for verification later
-        WebElement productNameElement = driver.findElement(
-                By.xpath("//div[contains(@class, 'product') or contains(@class, 'item')]//a[1]//div[contains(@class, 'title') or contains(@class, 'name')]"));
-        String productName = productNameElement.getText().trim();
+        String productName = firstProduct.getText().trim();
         System.out.println("Selected product: " + productName);
 
-        // Click on the product to view details
-        firstProduct.click();
+        // Click the first product to see the details
+        new Actions(driver).moveToElement(firstProduct).click().perform();
+
+        Thread.sleep(10000);
 
         // Step 7: On the product page, add to cart
         WebElement addToCartButton = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//button[contains(text(), 'Add to Cart') or contains(@class, 'add-to-cart')]")));
-        addToCartButton.click();
+                By.xpath("//button[@class='btn btn-add-to-cart']")));
+
+        new Actions(driver).moveToElement(addToCartButton).click().perform();
+
+        Thread.sleep(5000);
 
         // Step 8: Wait for confirmation that product was added to cart
-        wait.until(ExpectedConditions.or(
-                ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'success') and contains(text(), 'added')]")),
-                ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'cart-message')]"))
+        wait.until(ExpectedConditions.and(
+                ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='modal.fade.show']"))
+//                ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[contains(@class, 'modal-text') and contains(text(), 'Success add to cart')]"))
         ));
 
         // Step 9: Navigate to cart page
         WebElement cartIcon = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//a[contains(@class, 'cart') or contains(@href, 'cart')]")));
+                By.xpath("//div[contains(@id, 'show-your-cart')][1]")));
         cartIcon.click();
 
         // Step 10: Verify that the product is in the cart
